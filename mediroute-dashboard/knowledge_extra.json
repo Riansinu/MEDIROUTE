@@ -1,0 +1,540 @@
+[
+  {
+    "title": "Project objective",
+    "questions": [
+      "What is the objective of this project?",
+      "What problem does MediRoute solve?",
+      "What is the aim?",
+      "What is the motivation behind MediRoute?"
+    ],
+    "keywords": "objective aim purpose problem motivation",
+    "answer": "The project demonstrates automated transport of a medicine box with obstacle monitoring, controlled access using RFID and a status dashboard. The practical aim is to explore how routine delivery and handover could be assisted by a robot. The supplied code is a prototype; it does not demonstrate validated hospital deployment or measured reductions in staff workload.",
+    "source": "Firmware architecture; objective inferred from implemented functions"
+  },
+  {
+    "title": "Project abstract",
+    "questions": [
+      "Give me an abstract",
+      "Summarize the project for my presentation",
+      "Give a short introduction"
+    ],
+    "keywords": "abstract summary summarize introduction presentation describe",
+    "answer": "MediRoute is a prototype medicine-delivery system built around an ESP32. Two ultrasonic sensors support obstacle-aware movement, while RFID authorisation controls a servo-operated medicine box after a timed delivery cycle. A browser dashboard displays operational state. A local companion application adds face-based dashboard access and a voice-enabled project assistant. Current limitations include time-based completion, lack of physical box feedback and prototype authentication.",
+    "source": "Firmware and companion app overview"
+  },
+  {
+    "title": "Complete workflow",
+    "questions": [
+      "Explain the complete workflow step by step",
+      "What happens from startup to medicine collection?"
+    ],
+    "keywords": "workflow steps sequence flowchart process working principle",
+    "answer": "1. The ESP32 initialises the servo, motors, sensors, RFID reader and Wi-Fi server. 2. Sensors collect valid readings while the robot is idle. 3. Start Delivery checks readiness and begins the 10-second timer. 4. Movement adjusts to obstacles while system services keep running. 5. Timer expiry stops the motors and permits RFID collection. 6. An authorised card sends an unlock command. 7. After five seconds a lock command is sent. The companion dashboard adds a separate face-login step for its own user interface.",
+    "source": "setup(), handleStart(), autonomousLoop(), completeDelivery(), handleRFID()"
+  },
+  {
+    "title": "Why ESP32",
+    "questions": [
+      "Why did you choose ESP32?",
+      "What is the role of the microcontroller?"
+    ],
+    "keywords": "esp32 choice choose microcontroller role controller",
+    "answer": "The ESP32 runs the motor, sensor, RFID and servo logic and hosts a Wi-Fi dashboard. Its integrated Wi-Fi and GPIO/PWM facilities make those roles possible in one controller. That is an engineering rationale consistent with the implementation; the repository does not include a measured comparison against alternative boards.",
+    "source": "WiFi.h, WebServer.h, setup(); rationale inferred from implementation"
+  },
+  {
+    "title": "Programming languages and stack",
+    "questions": [
+      "What languages are used?",
+      "Explain the software stack",
+      "What technologies does this project use?"
+    ],
+    "keywords": "language programming stack technology technologies framework software",
+    "answer": "The robot firmware is Arduino-style C++. Its dashboard is HTML, CSS and JavaScript embedded in a raw string. The companion backend is Python with Flask. OpenCV YuNet and SFace handle face detection and matching; Vosk handles local speech transcription. The browser uses Web Audio for microphone recording and speech synthesis for reading answers aloud. Optional Ollama adds local generative answers.",
+    "source": "Firmware includes, app.py, speech.py, static/app.js, requirements.txt"
+  },
+  {
+    "title": "Firmware libraries",
+    "questions": [
+      "Which Arduino libraries are required?",
+      "What header files are included?"
+    ],
+    "keywords": "libraries library headers include dependencies arduino",
+    "answer": "The sketch includes WiFi.h, WebServer.h, SPI.h, MFRC522.h and ESP32Servo.h. They provide Wi-Fi, HTTP handling, SPI communication, RFID access and servo control respectively. The sketch also uses ESP32 LEDC PWM calls for the motor driver.",
+    "source": "Firmware lines 1–5 and setup()"
+  },
+  {
+    "title": "System architecture",
+    "questions": [
+      "Explain the system architecture",
+      "What are the main modules?",
+      "Explain the block diagram",
+      "Explain the software architecture",
+      "How are the modules connected?"
+    ],
+    "keywords": "architecture modules block diagram layers structure",
+    "answer": "There are two computing parts. The ESP32 owns delivery timing, motor control, ultrasonic processing, RFID and servo commands. The laptop companion app owns face login, local speech transcription and project answers. The browser displays the interface and captures camera/microphone input. When requested, the companion server relays the original dashboard's HTTP calls to the ESP32. Face and voice processing do not run on the robot.",
+    "source": "app.py robot proxy; firmware serviceSystem(); speech.py"
+  },
+  {
+    "title": "Why RFID",
+    "questions": [
+      "Why use RFID?",
+      "Why not just open the medicine box?"
+    ],
+    "keywords": "rfid why reason advantage authorisation handover",
+    "answer": "RFID adds a card-based authorisation step before sending the box-unlock command. The firmware also checks delivery completion, emergency state and servo readiness. This demonstrates controlled handover, but comparing card UIDs is not strong cryptographic authentication and does not confirm a patient's identity or medication prescription.",
+    "source": "isAuthorisedCard(), handleRFID(); limitations of implemented UID comparison"
+  },
+  {
+    "title": "RFID interface pins",
+    "questions": [
+      "Which pins connect the RFID reader?",
+      "What is the RFID SPI wiring?"
+    ],
+    "keywords": "rfid spi pin wiring connection sck miso mosi reset rc522",
+    "answer": "The sketch configures the MFRC522 with SS on GPIO 5 and reset on GPIO 22. SPI.begin uses SCK 18, MISO 19 and MOSI 23. These are the software pin assignments; the repository does not include a complete electrical schematic.",
+    "source": "RFID_SS, RFID_RST, SPI.begin(18, 19, 23, RFID_SS)"
+  },
+  {
+    "title": "Motor driver pins",
+    "questions": [
+      "Which pins connect the motor driver?",
+      "What are the TB6612 connections?"
+    ],
+    "keywords": "motor driver tb6612 pin wiring connection pwma pwmb ain bin stby",
+    "answer": "Channel A is the right motor: PWMA 25, AIN1 26 and AIN2 27. Channel B is the left motor: PWMB 14, BIN1 13 and BIN2 12. STBY is GPIO 33 and is set HIGH during setup. These are code assignments rather than a complete power-wiring diagram.",
+    "source": "Firmware section 2 and setup()"
+  },
+  {
+    "title": "Ultrasonic sensor pins",
+    "questions": [
+      "Which pins connect the ultrasonic sensors?",
+      "What are the trigger and echo connections?"
+    ],
+    "keywords": "ultrasonic sensor pin wiring trigger echo connection",
+    "answer": "The left ultrasonic sensor uses trigger GPIO 32 and echo GPIO 34. The right uses trigger GPIO 21 and echo GPIO 35. The firmware reads the pair sequentially. Check the actual sensor's electrical requirements separately; pin definitions alone are not a complete wiring specification.",
+    "source": "LEFT_TRIG, LEFT_ECHO, RIGHT_TRIG, RIGHT_ECHO; sampleSensorsNow()"
+  },
+  {
+    "title": "Distance calculation",
+    "questions": [
+      "How is distance calculated?",
+      "What is the ultrasonic distance formula?"
+    ],
+    "keywords": "distance calculation formula pulse duration ultrasonic measured measurement",
+    "answer": "The code sends a 10-microsecond trigger pulse, measures the HIGH echo pulse and computes distance in centimetres as duration × 0.0343 ÷ 2. Division by two accounts for the outgoing and returning journey. An echo timeout or a result outside 2–300 cm returns -1, representing an invalid reading.",
+    "source": "readDistance()"
+  },
+  {
+    "title": "Median filter",
+    "questions": [
+      "Why use a median filter?",
+      "How are noisy sensor readings filtered?"
+    ],
+    "keywords": "median filter noise noisy smoothing five samples sorted",
+    "answer": "Each sensor retains up to five valid readings. calculateMedian copies and sorts them, then returns the middle indexed value. This reduces the influence of isolated extreme readings on the displayed distance. It is separate from the more conservative safety distance used for movement decisions.",
+    "source": "FILTER_SIZE, calculateMedian(), addLeftSample(), addRightSample()"
+  },
+  {
+    "title": "Safety distance versus displayed distance",
+    "questions": [
+      "Why is safety distance different from displayed distance?",
+      "Why use the minimum of three readings?"
+    ],
+    "keywords": "safety minimum three readings conservative displayed distance difference",
+    "answer": "The displayed distance uses a median of up to five samples. Safety decisions use the minimum of the latest three valid readings, so a recent close obstacle is not averaged away. Consequently a displayed distance can look clear while the safety window still contains a closer reading.",
+    "source": "SAFETY_WINDOW, calculateSafetyDistance(), autonomousLoop()"
+  },
+  {
+    "title": "Missed echoes and stale readings",
+    "questions": [
+      "What does ECHO MISSED mean?",
+      "How long before a sensor reading is stale?",
+      "Why does the sensor say INVALID?"
+    ],
+    "keywords": "echo missed stale invalid no echo sensor health timeout fault",
+    "answer": "A missed echo increments a diagnostic counter but can retain the last valid distance. A reading remains usable for up to 2,000 ms after its last valid echo. With no samples the status is WAITING or NO ECHO; with an old sample it becomes INVALID. The five-miss threshold is diagnostic, not an automatic invalidation of a still-fresh reading.",
+    "source": "SENSOR_STALE_TIME, MAX_MISSED_ECHOES, sensor health functions"
+  },
+  {
+    "title": "Sensor sampling and crosstalk",
+    "questions": [
+      "Why read sensors one at a time?",
+      "How often are sensors sampled?",
+      "How is ultrasonic crosstalk reduced?"
+    ],
+    "keywords": "sampling interval crosstalk sequential 200 35 frequency sensors",
+    "answer": "Sensor updates are scheduled at a nominal 200 ms interval. sampleSensorsNow reads the left sensor, waits 35 ms, then reads the right sensor to reduce ultrasonic crosstalk. Avoidance also requests fresh readings explicitly, so actual sampling timing is not a perfectly fixed-rate schedule.",
+    "source": "SENSOR_INTERVAL, sampleSensorsNow(), avoidObstacle()"
+  },
+  {
+    "title": "Obstacle thresholds",
+    "questions": [
+      "What are the obstacle and clearance thresholds?",
+      "Why use 30 cm and 40 cm?"
+    ],
+    "keywords": "threshold clearance 30 40 centimetres hysteresis obstacle",
+    "answer": "An obstacle is flagged when either safety distance is below 30 cm. During avoidance, both safety distances must be at least 40 cm to count as clear. The separate clearance threshold gives extra margin before continuing; the repository does not document experiments establishing these as optimal values.",
+    "source": "OBSTACLE_DISTANCE, CLEAR_DISTANCE, sensorsClear()"
+  },
+  {
+    "title": "Both sides blocked",
+    "questions": [
+      "What happens when both sensors detect an obstacle?",
+      "How does obstacle avoidance turn?"
+    ],
+    "keywords": "both blocked reverse turn clearance avoidance direction",
+    "answer": "The robot stops, reverses for 180 ms at avoidance speed and initially turns toward the side with more clearance. It tests up to ten 120 ms turning pulses and requires two fresh clear readings. If it cannot find clearance, it stops with No safe direction detected. Forward avoidance movement also rechecks sensors between short pulses.",
+    "source": "avoidObstacle(), motorStep(), stopForUnsafePath()"
+  },
+  {
+    "title": "Motor speed and PWM",
+    "questions": [
+      "What PWM frequency and resolution are used?",
+      "Why are left and right speeds different?",
+      "What are the motor speed settings?"
+    ],
+    "keywords": "pwm speed frequency resolution 190 160 125 calibration",
+    "answer": "Motor PWM is configured at 1,000 Hz with 8-bit resolution. Forward duty values are left 190 and right 160; avoidance uses 125. The asymmetry could compensate for drivetrain differences, but the source does not document calibration measurements. These values are duty commands, not measured speeds in metres per second.",
+    "source": "LEFT_SPEED, RIGHT_SPEED, AVOID_SPEED, ledcAttach() in setup()"
+  },
+  {
+    "title": "Motor direction reversal",
+    "questions": [
+      "How can a reversed motor be corrected?",
+      "What do the motor reversed flags do?"
+    ],
+    "keywords": "reversed reverse flag polarity direction correction motor",
+    "answer": "LEFT_MOTOR_REVERSED and RIGHT_MOTOR_REVERSED are both false in the supplied sketch. Each drive function negates its speed command if the corresponding flag is true. Positive and negative commands select opposite driver input states; zero sets both direction inputs LOW. Changing a flag is a firmware modification that needs testing on the actual drivetrain.",
+    "source": "driveLeftMotor(), driveRightMotor()"
+  },
+  {
+    "title": "Servo initialisation order",
+    "questions": [
+      "Why initialise the servo before motors?",
+      "Why does servo attachment fail?"
+    ],
+    "keywords": "servo initialise initialize first attach failed pwm resources channel",
+    "answer": "setup() initialises the servo first to reserve servo PWM resources before attaching motor PWM. It sets a 50 Hz servo period and attaches GPIO 4 with 500–2400 microsecond bounds. An unsuccessful attachment sets servoReady false and causes delivery start to be rejected. The code does not diagnose the underlying wiring or power problem.",
+    "source": "initialiseServo(), setup(), handleStart()"
+  },
+  {
+    "title": "Servo command details",
+    "questions": [
+      "What pulse opens the servo?",
+      "What angle locks the medicine box?",
+      "What is the servo pin?"
+    ],
+    "keywords": "servo pulse angle gpio pin 4 1700 90 0 lock unlock",
+    "answer": "The servo is attached to GPIO 4. Locking calls write(0). Unlocking actually calls writeMicroseconds(1700), described in the log as approximately 90 degrees. Although UNLOCK_ANGLE is declared as 90, the unlock function uses the pulse command directly. There is no angle feedback to confirm the result.",
+    "source": "SERVO_PIN, lockBox(), unlockBox()"
+  },
+  {
+    "title": "Changing delivery duration",
+    "questions": [
+      "How do I change delivery time?",
+      "Can I make the delivery longer than ten seconds?",
+      "How can I change the delivery duration?",
+      "How to increase delivery duration?"
+    ],
+    "keywords": "change configure edit duration longer time timer constant",
+    "answer": "The firmware duration is TOTAL_DELIVERY_TIME = 10000 milliseconds. To change it, update that constant and the embedded dashboard's hard-coded 10-second text, progress denominator and bar calculation. A better future change would send total duration in /status so the interface derives its labels and percentage from the firmware.",
+    "source": "TOTAL_DELIVERY_TIME, webpage(), refreshStatus(), handleStatus()"
+  },
+  {
+    "title": "Delivery start conditions",
+    "questions": [
+      "Why is Start Delivery disabled?",
+      "What conditions are checked before starting?"
+    ],
+    "keywords": "start disabled ready preconditions rejected delivery button",
+    "answer": "The dashboard disables Start Delivery while running, after completion or during emergency stop. The server separately rejects a start when emergency stop is active, the delivery is already complete, the servo is not ready or sensors are unhealthy. If the box is logically unlocked, handleStart sends a lock command before beginning. It cannot verify physical closure.",
+    "source": "refreshStatus(), handleStart()"
+  },
+  {
+    "title": "Safe stop versus emergency stop",
+    "questions": [
+      "What is the difference between safe stop and emergency stop?",
+      "Can the robot resume after no safe direction?"
+    ],
+    "keywords": "safe emergency difference resume unsafe stop direction",
+    "answer": "stopForUnsafePath stops motors and clears robotRunning but does not set the emergency flag. After the path and sensors are ready, a new start request may begin a fresh cycle. Emergency Stop sets emergencyStop true, which blocks movement and further delivery until the ESP32 restarts. Neither behavior is a pause-and-resume of the previous elapsed cycle.",
+    "source": "stopForUnsafePath(), handleStop(), handleStart()"
+  },
+  {
+    "title": "Responsiveness during movement",
+    "questions": [
+      "How does emergency stop work while turning?",
+      "How are requests handled during motor movement?"
+    ],
+    "keywords": "responsiveness interruptible blocking service loop motorstep requests turning",
+    "answer": "motorStep repeatedly calls serviceSystem during a timed movement and checks emergency state, running state and timer expiry. serviceSystem handles HTTP requests, RFID, delivery timing, servo relocking and sensors. This makes movement interruptible between service calls, although sensor pulse measurements and delays mean this is not a hard real-time safety guarantee.",
+    "source": "motorStep(), serviceSystem(), readDistance()"
+  },
+  {
+    "title": "HTTP endpoints",
+    "questions": [
+      "What API endpoints exist?",
+      "How does the dashboard communicate with ESP32?"
+    ],
+    "keywords": "api endpoint endpoints http routes request communication json",
+    "answer": "The firmware exposes / for the page, /start for starting a cycle, /stop for emergency stopping and /status for JSON state. The companion uses authenticated /api/robot/status and POST /api/robot/start or /api/robot/stop routes, relaying them to the firmware. The original ESP32 routes remain directly accessible without the companion login.",
+    "source": "setup() server.on registrations; app.py robot()"
+  },
+  {
+    "title": "Status JSON fields",
+    "questions": [
+      "What data is returned by status?",
+      "Which fields does the JSON contain?"
+    ],
+    "keywords": "json fields status telemetry data progress lefthealth rightsafety",
+    "answer": "The status response contains status, progress, left, right, leftSafety, rightSafety, leftHealth, rightHealth, obstacle, rfid, box, servo, running, complete and emergency. Progress is elapsed milliseconds; distance values are centimetres, with -1 indicating no valid displayed distance.",
+    "source": "handleStatus()"
+  },
+  {
+    "title": "Dashboard refresh rate",
+    "questions": [
+      "How often does the dashboard refresh?",
+      "What does requestInProgress do?"
+    ],
+    "keywords": "refresh polling poll interval requestinprogress overlapping 500 dashboard",
+    "answer": "The embedded dashboard calls refreshStatus every 500 ms. requestInProgress prevents another poll from starting while the previous request remains outstanding. This is HTTP polling, not WebSocket streaming. Sensor sampling is a separate nominal 200 ms firmware schedule.",
+    "source": "refreshStatus(), setInterval(refreshStatus, 500), SENSOR_INTERVAL"
+  },
+  {
+    "title": "Dashboard connection troubleshooting",
+    "questions": [
+      "Why does it say ESP32 connection lost?",
+      "Why are live readings unavailable?",
+      "How do I connect the robot dashboard?"
+    ],
+    "keywords": "connection lost disconnected unavailable readings connect wifi",
+    "answer": "The companion server must be able to reach the robot. Connect the laptop to MediRoute_Robot Wi-Fi, check that the ESP32 is powered, and use Connect dashboard. The default upstream address is http://192.168.4.1; ESP32_URL can override it before starting the server. Face login and project answers can work even while the robot is disconnected.",
+    "source": "setup(), app.py ESP32 and robot(), README"
+  },
+  {
+    "title": "No destination tracking",
+    "questions": [
+      "Does it use GPS?",
+      "Does it follow a line?",
+      "How does it know the destination?",
+      "Is there path planning?",
+      "How does it know which room it is in?",
+      "Does the robot know which room it is in?",
+      "How is the route selected?"
+    ],
+    "keywords": "gps line following destination mapping path planning navigation route localization",
+    "answer": "The supplied version has no GPS, line-following input, map or route planner. It reacts to ultrasonic distances and marks the cycle complete when ten seconds have elapsed. Therefore it cannot verify arrival at a particular room from this code alone. Destination markers or localisation would be future additions.",
+    "source": "autonomousLoop(), deliveryTimeExpired(), completeDelivery()"
+  },
+  {
+    "title": "Benefits and applications",
+    "questions": [
+      "What are the advantages?",
+      "Where can this be used?",
+      "What are the applications?"
+    ],
+    "keywords": "advantages benefits applications use cases useful",
+    "answer": "The prototype brings movement, obstacle monitoring, card-controlled handover and visible status into one demonstration. It can support learning and evaluation of medicine-delivery automation, embedded systems and multimodal dashboards. Hospital or care-facility use is a potential application, not a validated capability of this repository.",
+    "source": "Capabilities inferred from firmware and companion app; no deployment evidence supplied"
+  },
+  {
+    "title": "Future scope",
+    "questions": [
+      "What is the future scope?",
+      "How can this project be improved?",
+      "What upgrades could we add?"
+    ],
+    "keywords": "future scope improve improvements upgrades enhancement extend",
+    "answer": "Potential upgrades include destination markers or localisation, physical lid feedback, battery monitoring, authenticated firmware endpoints, delivery logging and scheduling. For the dashboard, stronger anti-spoofing and a larger project-document collection could improve authentication and answers. These are proposed extensions, not features already implemented.",
+    "source": "Gap analysis of supplied firmware and companion app"
+  },
+  {
+    "title": "Battery and power specifications",
+    "questions": [
+      "What battery is used?",
+      "How long does the battery last?",
+      "What is the power consumption?"
+    ],
+    "keywords": "battery power consumption runtime voltage capacity supply charging",
+    "answer": "The source does not specify the battery chemistry, capacity, supply design, runtime or measured power consumption. It also has no battery-monitoring logic. Those values need the actual hardware specification and measurements; they cannot be determined from motor PWM values alone.",
+    "source": "Supplied sketch: no battery specification or power telemetry"
+  },
+  {
+    "title": "Cost and bill of materials",
+    "questions": [
+      "What is the project cost?",
+      "What is the budget?",
+      "Give a bill of materials"
+    ],
+    "keywords": "cost price budget bill materials expense amount",
+    "answer": "The repository provides component roles but no prices or complete bill of materials. A cost estimate would need the actual ESP32 board, chassis, motors, driver, sensors, RFID reader, servo, battery, wiring and enclosure, plus current supplier quotes. I cannot give a verified total from this source.",
+    "source": "Supplied repository contains no pricing or complete BOM"
+  },
+  {
+    "title": "Performance and test results",
+    "questions": [
+      "What is the accuracy?",
+      "What results were obtained?",
+      "What is the success rate?"
+    ],
+    "keywords": "accuracy results performance success rate evaluation metrics measured",
+    "answer": "No measured delivery-success rate, navigation accuracy, payload capacity or clinical results are provided with the sketch. The companion has automated software tests and model smoke tests, but those do not establish real-world face accuracy or robot reliability. Meaningful evaluation would measure completion, obstacle handling, false acceptance/rejection and speech transcription with representative users and conditions.",
+    "source": "Repository contents; companion VERIFICATION.md and tests"
+  },
+  {
+    "title": "Face verification algorithm",
+    "questions": [
+      "How does face recognition work?",
+      "What are YuNet and SFace?",
+      "What face matching threshold is used?"
+    ],
+    "keywords": "face algorithm yunet sface embedding cosine threshold 128 matching",
+    "answer": "YuNet detects a face and facial landmarks. The server requires exactly one sufficiently large face, aligns a crop with SFace and computes a normalised feature vector. Login compares it with the enrolled vector using cosine similarity and accepts at 0.45 or higher. This threshold is a prototype choice, not an accuracy guarantee, and there is no certified liveness detection.",
+    "source": "app.py face_feature(), login()"
+  },
+  {
+    "title": "Face profile privacy",
+    "questions": [
+      "Where is my face stored?",
+      "Are camera images saved?",
+      "How do I delete my face data?"
+    ],
+    "keywords": "face privacy stored storage template images saved delete biometric data",
+    "answer": "The app stores your name, a password hash and a face template in data/profile.json on this computer. Camera images are processed in memory rather than saved by the application. Templates are stored unencrypted, so protect the computer account. Privacy & account provides deletion after checking your recovery password.",
+    "source": "app.py enrol(), delete_profile(); README"
+  },
+  {
+    "title": "Face login troubleshooting",
+    "questions": [
+      "Why is my face not recognised?",
+      "Why does face verification fail?",
+      "Why is face login failing?",
+      "Face login is not working"
+    ],
+    "keywords": "face fail failed rejected recognise recognize verification lighting camera",
+    "answer": "Use good lighting, face the camera and keep exactly one face visible. Move closer if the face is too small. The server rejects missing or multiple faces and a similarity below its threshold. You can sign in using the recovery password after enrolment. Five failed login attempts within a minute trigger temporary throttling.",
+    "source": "app.py face_feature(), login()"
+  },
+  {
+    "title": "Photo spoofing",
+    "questions": [
+      "Can a photo fool face login?",
+      "Does it have liveness detection?",
+      "Is face authentication secure?"
+    ],
+    "keywords": "photo spoofing replay liveness anti spoof biometric security secure",
+    "answer": "A photograph or replayed video may fool this prototype. It matches face features but does not implement validated liveness or presentation-attack detection. Backend session checks prevent a simple UI-only bypass, but they do not fix biometric spoofing. Use stronger authentication and evaluated anti-spoofing before relying on it for sensitive access.",
+    "source": "Companion face_feature(), login(); README limitations"
+  },
+  {
+    "title": "Recovery and setup code",
+    "questions": [
+      "What is the setup code for?",
+      "How does the recovery password work?",
+      "Do I enrol again after restart?"
+    ],
+    "keywords": "recovery password setup code enrol restart account session",
+    "answer": "The setup code is printed in the server terminal for first-time owner enrolment. Enrolment stores a password hash for recovery login and then closes to further registrations. Restarting the server invalidates sessions but retains the enrolled profile; sign in again rather than enrol again. The assistant does not have access to your password or the active setup code.",
+    "source": "app.py SETUP_TOKEN, enrol(), login(), app.secret_key"
+  },
+  {
+    "title": "Offline voice pipeline",
+    "questions": [
+      "How does voice input work?",
+      "Which speech recognition model is used?",
+      "Does speaking require internet?"
+    ],
+    "keywords": "speech voice input pipeline vosk transcription offline model microphone audio",
+    "answer": "Speak requests microphone permission and records through a browser AudioWorklet. Stop converts the recording to 16 kHz mono PCM and sends it to the local authenticated /api/transcribe endpoint. Vosk small English US 0.15 transcribes it on this computer. Review the text and select Ask. Recording is capped at 30 seconds and audio is not saved by this app.",
+    "source": "static/app.js, pcm-capture.js, speech.py, app.py transcribe_audio()"
+  },
+  {
+    "title": "Microphone troubleshooting",
+    "questions": [
+      "Why is it not listening?",
+      "Why is my microphone level zero?",
+      "Why is no speech detected?",
+      "The voice assistant is not listening",
+      "Microphone does not work"
+    ],
+    "keywords": "microphone mic listening zero no speech detected permission recording troubleshoot",
+    "answer": "Allow microphone access, click Speak and check that the mic-level indicator moves while you talk. Click Stop to transcribe. A zero level can mean the microphone is muted, unavailable or the wrong device is selected in the browser. Use a quiet setting and review the transcript. This version transcribes locally, so the earlier browser speech-service network error is no longer part of the input path.",
+    "source": "static/app.js recording flow; speech.py"
+  },
+  {
+    "title": "Spoken replies",
+    "questions": [
+      "How does it speak the answer?",
+      "How do I mute the assistant?",
+      "Can I stop the voice?"
+    ],
+    "keywords": "synthesis speak answer aloud output mute stop audio voice tts",
+    "answer": "The browser reads answers using SpeechSynthesisUtterance when Read aloud is enabled. Stop audio cancels current speech, and clearing Read aloud disables automatic spoken replies. Available voices depend on the browser and operating system. Text answers remain visible even if speech output is unavailable.",
+    "source": "static/app.js ask(), stop-audio and speak handlers"
+  },
+  {
+    "title": "AI versus knowledge retrieval",
+    "questions": [
+      "Is this a generative AI chatbot?",
+      "How does the assistant choose answers?",
+      "Does it use ChatGPT?"
+    ],
+    "keywords": "generative ai chatbot chatgpt llm retrieval choose answers knowledge model",
+    "answer": "By default the assistant searches a curated project knowledge base and returns the best-matching documented answer. It does not call ChatGPT or train a new model. Optional Ollama support can generate more flexible answers from the same project facts when a local model is installed and configured. Neither mode can issue robot commands.",
+    "source": "knowledge_engine.py; app.py ask()"
+  },
+  {
+    "title": "Enabling local generative AI",
+    "questions": [
+      "How do I enable Ollama?",
+      "How can I add a local LLM?"
+    ],
+    "keywords": "ollama enable configure llm model local generative install",
+    "answer": "Start an installed Ollama service with a model available locally. In the terminal used to launch the dashboard, set OLLAMA_MODEL to that model's exact name, then start app.py. The backend calls 127.0.0.1:11434/api/chat with project context. If it cannot reach the service, it falls back to curated answers. No model download is performed by that setting.",
+    "source": "app.py ask(); README"
+  },
+  {
+    "title": "Extending project knowledge",
+    "questions": [
+      "How can I add more knowledge?",
+      "Where can I edit the assistant answers?"
+    ],
+    "keywords": "extend add edit knowledge answers documentation questions database",
+    "answer": "Edit knowledge.json or knowledge_extra.json. Each entry has a title, keywords, answer and source; extra entries also include example questions. The retrieval engine reloads those files when they change. Add factual, specific answers and clear sources, and distinguish proposed improvements from implemented features.",
+    "source": "knowledge_engine.py and knowledge JSON files"
+  },
+  {
+    "title": "Clinical scope",
+    "questions": [
+      "Can it decide which medicine to give?",
+      "Does it check prescriptions or dosage?",
+      "Can it identify patients?"
+    ],
+    "keywords": "prescription dosage dose patient identify medicine decision clinical",
+    "answer": "The supplied system does not select medicines, verify prescriptions, calculate doses or identify patients. It transports a box during a timed cycle and checks RFID UIDs before issuing an unlock command. Medicine contents and authorised handover procedures would need a separate workflow and validation.",
+    "source": "Supplied firmware capabilities and absent clinical logic"
+  },
+  {
+    "title": "Delivery logging and scheduling",
+    "questions": [
+      "Are deliveries logged?",
+      "Can deliveries be scheduled?",
+      "Is there a database?"
+    ],
+    "keywords": "database logging logs history schedule scheduling records delivery",
+    "answer": "The firmware prints diagnostic events to Serial but has no persistent delivery database or scheduling system. The companion stores a local owner profile, not a delivery history, and does not save conversations. Persistent timestamps, recipients, audit records and scheduling would be new features.",
+    "source": "Firmware Serial calls; app.py PROFILE; no delivery storage implementation"
+  },
+  {
+    "title": "Testing plan",
+    "questions": [
+      "How should we test the project?",
+      "What test cases should we present?"
+    ],
+    "keywords": "test testing cases validation plan demonstrate viva experiment",
+    "answer": "Useful cases include clear-path delivery, left/right/both-side obstacles, stale sensor readings, authorised and unauthorised cards, scanning before completion, servo attachment failure and emergency stop during movement. For the dashboard test successful and failed face login, password recovery, denied camera/mic permissions, silence and noisy speech. Report actual observations separately from expected behavior.",
+    "source": "Test plan derived from firmware branches and companion interfaces"
+  }
+]

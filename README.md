@@ -12,6 +12,8 @@
 
 ## 📌 Overview
 
+The [local dashboard companion](mediroute-dashboard/README.md) adds face login, offline speech transcription, and a project assistant with 62 topics. Follow its setup instructions to run it on your computer.
+
 **MediRoute** is a low-cost, two-wheel-drive medicine transport robot developed to explore autonomous indoor delivery in healthcare environments.
 
 The project combines:

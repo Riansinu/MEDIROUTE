@@ -1,0 +1,7 @@
+vendor/
+data/
+models/*.onnx
+models/download-sha256.json
+models/vosk-*/
+__pycache__/
+tests/speech-sample.wav
